@@ -170,8 +170,17 @@ function MainAppContent() {
   const filteredVideos = videoList.filter((v) => {
     const matchesSearch = v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.channelName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || v.tierExclusive === selectedCategory || selectedCategory === 'Gold Exclusives' ? v.tierExclusive === 'Gold' : true;
-    return matchesSearch && matchesCategory;
+
+    if (!matchesSearch) return false;
+    if (selectedCategory === 'All') return true;
+    if (selectedCategory === 'Gold Exclusives') return v.tierExclusive === 'Gold';
+    if (selectedCategory === 'Watch Party Live') return true;
+    if (selectedCategory === 'AI & Machine Learning') return v.category === 'AI' || v.tags?.includes('#ai');
+    if (selectedCategory === 'React & Vite') return v.category === 'Coding' || v.tags?.includes('#react');
+    if (selectedCategory === 'Music & Lofi') return v.category === 'Lo-Fi' || v.category === 'Music';
+    if (selectedCategory === 'Cybersecurity') return v.category === 'Tech' || v.tags?.includes('#security');
+
+    return v.category === selectedCategory || v.tierExclusive === selectedCategory;
   });
 
   return (
