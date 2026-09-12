@@ -45,6 +45,9 @@ export default function Sidebar({
               className={`nav-btn ${isActive ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab(item.id);
+                if (item.id === 'home' && window.onResetSelectedVideo) {
+                  window.onResetSelectedVideo();
+                }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               title={item.label}

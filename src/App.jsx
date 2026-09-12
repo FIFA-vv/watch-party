@@ -71,7 +71,11 @@ function MainAppContent() {
 
   // Video State
   const [videoList, setVideoList] = useState(FEATURED_VIDEOS);
-  const [selectedVideo, setSelectedVideo] = useState(FEATURED_VIDEOS[0]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+
+  useEffect(() => {
+    window.onResetSelectedVideo = () => setSelectedVideo(null);
+  }, []);
 
   // Modals state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -118,6 +122,7 @@ function MainAppContent() {
       const joinedId = await rtcService.joinRoom(targetRoomId);
       setRoomId(joinedId);
       setIsHost(false);
+      if (!selectedVideo) setSelectedVideo(FEATURED_VIDEOS[0]);
       setActiveTab('watch-party');
     } catch (err) {
       console.error('Failed to join room', err);
@@ -134,6 +139,7 @@ function MainAppContent() {
       }
       setRoomId(newRoomId);
       setIsHost(true);
+      if (!selectedVideo) setSelectedVideo(FEATURED_VIDEOS[0]);
       setActiveTab('watch-party');
     } catch (err) {
       console.error('Failed to create room', err);
@@ -174,6 +180,7 @@ function MainAppContent() {
       <Navbar
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         onGoHome={() => {
+          setSelectedVideo(null);
           setActiveTab('home');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -192,12 +199,16 @@ function MainAppContent() {
         {/* Left Sidebar */}
         <Sidebar
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => {
+            if (tab === 'home') setSelectedVideo(null);
+            setActiveTab(tab);
+          }}
           isCollapsed={isSidebarCollapsed}
           onOpenPricing={() => setIsPricingModalOpen(true)}
           onOpenProfile={() => setIsProfileModalOpen(true)}
           onSelectChannel={(chName) => {
             setSearchQuery(chName);
+            setSelectedVideo(null);
             setActiveTab('home');
           }}
           subscribedChannels={subscribedChannels}
@@ -210,8 +221,57 @@ function MainAppContent() {
             <ShortsPlayer />
           ) : activeTab === 'library' || activeTab === 'downloads' ? (
             <LibraryView onSelectVideo={(v) => { setSelectedVideo(v); setActiveTab('home'); }} />
+          ) : !selectedVideo ? (
+            /* YouTube Home Feed Video Grid View (Default Page Interface) */
+            <div className="home-videos-catalog-section" style={{ marginTop: 0 }}>
+              <CategoryBar
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+
+              <div className="video-cards-responsive-grid" style={{ marginTop: '20px' }}>
+                {filteredVideos.map((item) => (
+                  <div
+                    key={item.id}
+                    className="video-card-tile glass-panel"
+                    onClick={() => {
+                      setSelectedVideo(item);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <div className="thumb-wrap">
+                      <img src={item.thumbnail} alt={item.title} className="thumb-img" />
+                      <span className="duration-tag">{item.duration}</span>
+                      {item.tierExclusive !== 'Free' && (
+                        <span className="tier-overlay-badge"><Crown size={12} /> {item.tierExclusive}</span>
+                      )}
+                    </div>
+
+                    <div className="tile-details">
+                      <img src={item.channelAvatar} alt={item.channelName} className="channel-avatar-sm" />
+                      <div className="tile-meta">
+                        <h4 className="video-tile-title">{item.title}</h4>
+                        <span className="channel-tile-name">{item.channelName}</span>
+                        <span className="tile-stats">{item.views} • {item.uploadedAt}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <>
+              {/* Back to Feed Navigation Bar */}
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setSelectedVideo(null)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ← Back to Home Feed
+                </button>
+              </div>
+
               {/* Main Feed & Video Player View */}
               <div className="video-player-feed-layout">
                 {/* Left Column: Player & Metadata & Comments */}
@@ -435,7 +495,7 @@ function MainAppContent() {
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         roomId={roomId}
-        videoTitle={selectedVideo.title}
+        videoTitle={selectedVideo ? selectedVideo.title : 'WeTube Video'}
       />
       <VoiceSearchModal
         isOpen={isVoiceSearchOpen}
