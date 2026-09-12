@@ -2,6 +2,8 @@
  * Evaluates security risk based on trusted profile and current login context
  */
 export function evaluateSecurityRisk(user, context) {
+    const isEmailDifferent = context.email && context.email.toLowerCase() !== user.email.toLowerCase();
+
     const isCityTrusted = user.trustedCities.some(
         (c) => c.toLowerCase() === context.city.toLowerCase()
     );
@@ -17,19 +19,24 @@ export function evaluateSecurityRisk(user, context) {
     const isNewState = !isStateTrusted;
     const isNewDevice = !isDeviceTrusted;
 
-    const requiresOtp = isNewCity || isNewState || isNewDevice;
+    const requiresOtp = isEmailDifferent || isNewCity || isNewState || isNewDevice;
 
     let riskLevel = 'LOW';
     const riskFactors = [];
 
+    if (isEmailDifferent) {
+        riskFactors.push(`New Email Account (${context.email})`);
+        riskLevel = 'HIGH';
+    }
+
     if (isNewDevice) {
         riskFactors.push(`Unrecognized Device (${context.device})`);
-        riskLevel = 'MEDIUM';
+        if (riskLevel !== 'HIGH') riskLevel = 'MEDIUM';
     }
 
     if (isNewCity) {
         riskFactors.push(`Unrecognized City (${context.city})`);
-        riskLevel = riskLevel === 'MEDIUM' ? 'HIGH' : 'MEDIUM';
+        if (riskLevel !== 'HIGH') riskLevel = 'MEDIUM';
     }
 
     if (isNewState) {
@@ -50,6 +57,7 @@ export function evaluateSecurityRisk(user, context) {
         isNewCity,
         isNewState,
         isNewDevice,
+        isEmailDifferent,
         riskFactors,
         summaryReason,
     };

@@ -5,136 +5,151 @@ import { evaluateSecurityRisk } from '../utils/securityUtils';
 import { isLightModeISTWindow } from '../utils/timeUtils';
 
 export default function AuthModal() {
-    const {
-        isAuthModalOpen,
-        setIsAuthModalOpen,
-        user,
-        loginContext,
-        setLoginContext,
-        initiateLogin,
-    } = useAuth();
+  const {
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    user,
+    loginContext,
+    setLoginContext,
+    initiateLogin,
+  } = useAuth();
 
-    const [simulatedCity, setSimulatedCity] = useState(loginContext.city);
-    const [simulatedState, setSimulatedState] = useState(loginContext.state);
-    const [simulatedDevice, setSimulatedDevice] = useState(loginContext.device);
-    const [simulatedTime, setSimulatedTime] = useState(loginContext.simulatedTimeIST || '10:30 AM');
+  const [simulatedEmail, setSimulatedEmail] = useState(user.email);
+  const [simulatedCity, setSimulatedCity] = useState(loginContext.city);
+  const [simulatedState, setSimulatedState] = useState(loginContext.state);
+  const [simulatedDevice, setSimulatedDevice] = useState(loginContext.device);
+  const [simulatedTime, setSimulatedTime] = useState(loginContext.simulatedTimeIST || '10:30 AM');
 
-    if (!isAuthModalOpen) return null;
+  if (!isAuthModalOpen) return null;
 
-    const currentEvaluation = evaluateSecurityRisk(user, {
-        city: simulatedCity,
-        state: simulatedState,
-        country: 'India',
-        device: simulatedDevice,
-        deviceType: 'Desktop',
-        simulatedTimeIST: simulatedTime,
-    });
+  const currentEvaluation = evaluateSecurityRisk(user, {
+    email: simulatedEmail,
+    city: simulatedCity,
+    state: simulatedState,
+    country: 'India',
+    device: simulatedDevice,
+    deviceType: 'Desktop',
+    simulatedTimeIST: simulatedTime,
+  });
 
-    const { isLightMode, reason: themeReason } = isLightModeISTWindow(simulatedTime);
+  const { isLightMode, reason: themeReason } = isLightModeISTWindow(simulatedTime);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const updatedCtx = {
-            city: simulatedCity,
-            state: simulatedState,
-            country: 'India',
-            device: simulatedDevice,
-            deviceType: 'Desktop',
-            simulatedTimeIST: simulatedTime,
-        };
-        setLoginContext(updatedCtx);
-        initiateLogin(updatedCtx);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const updatedCtx = {
+      email: simulatedEmail,
+      city: simulatedCity,
+      state: simulatedState,
+      country: 'India',
+      device: simulatedDevice,
+      deviceType: 'Desktop',
+      simulatedTimeIST: simulatedTime,
     };
+    setLoginContext(updatedCtx);
+    initiateLogin(updatedCtx);
+  };
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content auth-modal-box">
-                <div className="modal-header">
-                    <div className="brand-logo-modal">
-                        <Shield size={24} className="text-cyan animate-pulse" />
-                        <h2>Secure Risk-Based Login</h2>
-                    </div>
-                    <button className="close-btn" onClick={() => setIsAuthModalOpen(false)}>
-                        ✕
-                    </button>
-                </div>
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content auth-modal-box">
+        <div className="modal-header">
+          <div className="brand-logo-modal">
+            <Shield size={24} className="text-cyan animate-pulse" />
+            <h2>Secure Risk-Based Login</h2>
+          </div>
+          <button className="close-btn" onClick={() => setIsAuthModalOpen(false)}>
+            ✕
+          </button>
+        </div>
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-section">
-                        <span className="section-label">Simulate Login Environment & Location</span>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-section">
+            <span className="section-label">Simulate Login Credentials & Environment</span>
 
-                        <div className="input-group">
-                            <label><MapPin size={14} /> City</label>
-                            <input
-                                type="text"
-                                className="input-field"
-                                value={simulatedCity}
-                                onChange={(e) => setSimulatedCity(e.target.value)}
-                                placeholder="e.g. Mumbai, Tokyo, London"
-                                required
-                            />
-                        </div>
-
-                        <div className="input-group">
-                            <label><MapPin size={14} /> State / Region</label>
-                            <input
-                                type="text"
-                                className="input-field"
-                                value={simulatedState}
-                                onChange={(e) => setSimulatedState(e.target.value)}
-                                placeholder="e.g. Maharashtra, Kanto"
-                                required
-                            />
-                        </div>
-
-                        <div className="input-group">
-                            <label><Smartphone size={14} /> Device Fingerprint</label>
-                            <select
-                                className="input-field"
-                                value={simulatedDevice}
-                                onChange={(e) => setSimulatedDevice(e.target.value)}
-                            >
-                                <option value="Chrome on Windows 11 (Desktop)">Chrome on Windows 11 (Desktop) [Trusted]</option>
-                                <option value="Safari on iPhone 15 Pro (Mobile)">Safari on iPhone 15 Pro (Mobile) [New Device]</option>
-                                <option value="Firefox on macOS Sonoma (Laptop)">Firefox on macOS Sonoma (Laptop) [New Device]</option>
-                                <option value="Unknown Linux Workstation">Unknown Linux Workstation [High Risk]</option>
-                            </select>
-                        </div>
-
-                        <div className="input-group">
-                            <label><Clock size={14} /> Login Time (IST)</label>
-                            <input
-                                type="text"
-                                className="input-field"
-                                value={simulatedTime}
-                                onChange={(e) => setSimulatedTime(e.target.value)}
-                                placeholder="e.g. 10:30 AM, 11:45 AM, 08:30 PM"
-                            />
-                            <span className="field-hint">
-                                Window: <strong>10:00 AM – 12:00 PM IST</strong> auto-triggers Light Theme!
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Realtime Risk Indicator */}
-                    <div className={`risk-preview-box risk-${currentEvaluation.riskLevel.toLowerCase()}`}>
-                        <div className="risk-header">
-                            <AlertTriangle size={16} />
-                            <span>Realtime Security Check: <strong>{currentEvaluation.riskLevel} RISK</strong></span>
-                        </div>
-
-                        <p className="risk-reason">{currentEvaluation.summaryReason}</p>
-                        <p className="theme-reason">🎨 {themeReason}</p>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary submit-btn">
-                        <span>Proceed to Login</span>
-                        <ArrowRight size={18} />
-                    </button>
-                </form>
+            <div className="input-group">
+              <label><Lock size={14} /> Email Address</label>
+              <input
+                type="email"
+                className="input-field"
+                value={simulatedEmail}
+                onChange={(e) => setSimulatedEmail(e.target.value)}
+                placeholder="e.g. user@example.com"
+                required
+              />
             </div>
 
-            <style>{`
+            <div className="input-group">
+              <label><MapPin size={14} /> City</label>
+              <input
+                type="text"
+                className="input-field"
+                value={simulatedCity}
+                onChange={(e) => setSimulatedCity(e.target.value)}
+                placeholder="e.g. Mumbai, Tokyo, London"
+                required
+              />
+            </div>
+
+            <div className="input-group">
+              <label><MapPin size={14} /> State / Region</label>
+              <input
+                type="text"
+                className="input-field"
+                value={simulatedState}
+                onChange={(e) => setSimulatedState(e.target.value)}
+                placeholder="e.g. Maharashtra, Kanto"
+                required
+              />
+            </div>
+
+            <div className="input-group">
+              <label><Smartphone size={14} /> Device Fingerprint</label>
+              <select
+                className="input-field"
+                value={simulatedDevice}
+                onChange={(e) => setSimulatedDevice(e.target.value)}
+              >
+                <option value="Chrome on Windows 11 (Desktop)">Chrome on Windows 11 (Desktop) [Trusted]</option>
+                <option value="Safari on iPhone 15 Pro (Mobile)">Safari on iPhone 15 Pro (Mobile) [New Device]</option>
+                <option value="Firefox on macOS Sonoma (Laptop)">Firefox on macOS Sonoma (Laptop) [New Device]</option>
+                <option value="Unknown Linux Workstation">Unknown Linux Workstation [High Risk]</option>
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label><Clock size={14} /> Login Time (IST)</label>
+              <input
+                type="text"
+                className="input-field"
+                value={simulatedTime}
+                onChange={(e) => setSimulatedTime(e.target.value)}
+                placeholder="e.g. 10:30 AM, 11:45 AM, 08:30 PM"
+              />
+              <span className="field-hint">
+                Window: <strong>10:00 AM – 12:00 PM IST</strong> auto-triggers Light Theme!
+              </span>
+            </div>
+          </div>
+
+          {/* Realtime Risk Indicator */}
+          <div className={`risk-preview-box risk-${currentEvaluation.riskLevel.toLowerCase()}`}>
+            <div className="risk-header">
+              <AlertTriangle size={16} />
+              <span>Realtime Security Check: <strong>{currentEvaluation.riskLevel} RISK</strong></span>
+            </div>
+
+            <p className="risk-reason">{currentEvaluation.summaryReason}</p>
+            <p className="theme-reason">🎨 {themeReason}</p>
+          </div>
+
+          <button type="submit" className="btn btn-primary submit-btn">
+            <span>Proceed to Login</span>
+            <ArrowRight size={18} />
+          </button>
+        </form>
+      </div>
+
+      <style>{`
         .auth-modal-box {
           max-width: 520px;
         }
@@ -227,6 +242,6 @@ export default function AuthModal() {
           margin-top: 8px;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

@@ -148,8 +148,17 @@ export const AuthProvider = ({ children }) => {
             const updatedStates = Array.from(new Set([...prev.trustedStates, ctx.state]));
             const updatedDevices = Array.from(new Set([...prev.trustedDevices, ctx.device]));
 
+            const newEmail = ctx.email || prev.email;
+            let newName = prev.name;
+            if (ctx.email && ctx.email.toLowerCase() !== prev.email.toLowerCase()) {
+                const namePart = ctx.email.split('@')[0];
+                newName = namePart.split(/[\._\-]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+            }
+
             return {
                 ...prev,
+                email: newEmail,
+                name: newName,
                 themePreference: calculatedTheme,
                 trustedCities: updatedCities,
                 trustedStates: updatedStates,
