@@ -9,11 +9,11 @@ class RTCService {
     this.userInfo = { name: 'Guest', avatar: '🎬', isMuted: false, isCameraOff: false, isHandRaised: false };
     this.localStream = null;
     this.screenStream = null;
-    
+
     this.dataConnections = new Map(); // peerId -> DataConnection
     this.mediaConnections = new Map(); // peerId -> MediaConnection
     this.remoteStreams = new Map(); // peerId -> Stream
-    
+
     this.broadcastChannel = null;
     this.listeners = {
       onRemoteStream: [],
@@ -45,7 +45,7 @@ class RTCService {
     return new Promise((resolve, reject) => {
       // Clean peer ID for readability
       const peerIdPrefix = isHost ? `host-${roomId}` : `peer-${roomId}-${Math.random().toString(36).substring(2, 7)}`;
-      
+
       this.peer = new Peer(peerIdPrefix, {
         debug: 1,
         config: {
@@ -60,7 +60,7 @@ class RTCService {
       this.peer.on('open', (id) => {
         this.myPeerId = id;
         this.notifyStatus('connected', { peerId: id });
-        
+
         if (!isHost) {
           // Joiner connects to host
           const hostPeerId = `host-${roomId}`;
@@ -77,7 +77,7 @@ class RTCService {
         // Answer incoming call with local stream (or fallback empty stream if camera muted)
         const streamToSend = this.localStream || this._createSilentAudioVideoStream();
         call.answer(streamToSend);
-        
+
         call.on('stream', (remoteStream) => {
           this.remoteStreams.set(call.peer, remoteStream);
           this._emit('onRemoteStream', { peerId: call.peer, stream: remoteStream });
@@ -269,20 +269,31 @@ class RTCService {
     return stream;
   }
 
-  // Destroy session
-  destroy() {
-    this.mediaConnections.forEach(call => call.close());
-    this.dataConnections.forEach(conn => conn.close());
-    if (this.peer) this.peer.destroy();
-    if (this.broadcastChannel) this.broadcastChannel.close();
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(t => t.stop());
+  // Helper methods for App integration
+  async initialize(userName) {
+    this.userInfo.name = userName;
+    try {
+      this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch (err) {
+      this.localStream = this._createSilentAudioVideoStream();
     }
-    if (this.screenStream) {
-      this.screenStream.getTracks().forEach(t => t.stop());
-    }
-    this.remoteStreams.clear();
+    return this.localStream;
+  }
+
+  async joinRoom(roomId) {
+    await this.init(roomId, this.userInfo, false);
+    return roomId;
+  }
+
+  sendChatMessage(msg) {
+    this.broadcast({ type: 'CHAT_MESSAGE', msg });
+  }
+
+  sendSyncAction(action, time) {
+    this.broadcast({ type: 'SYNC_ACTION', action, time });
   }
 }
 
 export const rtcService = new RTCService();
+export default rtcService;
+
